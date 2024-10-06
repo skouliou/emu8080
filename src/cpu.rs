@@ -1,13 +1,15 @@
+use crate::{
+    asm::Instruction,
+    mem::{InvalidAddress, Memory},
+};
 use std::fmt::Display;
-
-use crate::{asm::Instruction, mem::{InvalidAddress, Memory}};
 
 #[derive(Debug, Default)]
 pub(crate) struct CPU {
-    regs: Registers,
-    sp: u16,         // 16bit stack pointer
-    pc: u16,         // 16bit program counter
-    flags: CpuState, // ineternal state after last instruction
+    pub(crate) regs: Registers,
+    pub(crate) sp: u16,         // 16bit stack pointer
+    pub(crate) pc: u16,         // 16bit program counter
+    pub(crate) flags: CpuState, // ineternal state after last instruction
 }
 
 #[derive(Debug, Default)]
@@ -22,28 +24,19 @@ struct Registers {
 }
 
 #[derive(Debug, Default)]
-struct CpuState {
-    carry: bool,
-    auxcarry: bool,
-    sign: bool,
-    zero: bool,
-    parity: bool,
-    interrupt: bool,
-    halted: bool,
+pub(crate) struct CpuState {
+    pub(crate) carry: bool,
+    pub(crate) auxcarry: bool,
+    pub(crate) sign: bool,
+    pub(crate) zero: bool,
+    pub(crate) parity: bool,
+    pub(crate) interrupt: bool,
+    pub(crate) halted: bool,
 }
 
 impl CPU {
     pub(crate) fn new(self: &Self) -> Self {
-        Self {
-            regs: Registers {
-                ..Default::default()
-            },
-            pc: 0,
-            sp: 0,
-            flags: CpuState {
-                ..Default::default()
-            },
-        }
+        Default::default()
     }
 
     pub(crate) fn reset(mut self) {
@@ -60,8 +53,13 @@ impl CPU {
         todo!()
     }
 
-    fn execute(&self, instruction: Instruction) -> Result<(), ExecutionError> {
-        todo!()
+    fn execute(
+        &mut self,
+        instruction: &mut Instruction,
+        mem: &mut Memory,
+    ) -> Result<(), ExecutionError> {
+        self.pc += instruction.size as u16;
+        (instruction.effect)(self, mem)
     }
 
     fn run(&self) {

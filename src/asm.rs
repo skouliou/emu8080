@@ -1,19 +1,68 @@
-use crate::mem::Memory;
-use crate::cpu::CPU;
+use std::error::Error;
 
-pub(crate) struct Instruction {
+use crate::cpu::CPU;
+use crate::mem::Memory;
+
+type InsructionResult = std::result::Result<(), Box<dyn Error>>;
+
+struct InstructionMetadata {
     /// Instruction Opcode
-    opcode: Opcode,
+    pub(crate) name: &'static str,
+    /// Instruction Opcode
+    pub(crate) opcode: u8,
     /// Execution duration (when not executed / when executed)
-    duration: (u8 /* not executed */, u8 /* executed */),
+    pub(crate) duration: (u8 /* not executed */, u8 /* executed */),
     /// Instruction side effects
-    effect: Box<dyn FnOnce(&mut CPU, &mut Memory) -> ()>,
+    pub(crate) effect: Box<dyn FnMut(&mut CPU, &mut Memory) -> InsructionResult>,
     /// Memory size in bytes
-    size: u8,
+    pub(crate) size: u8,
 }
 
+struct Instruction(InstructionMetadata);
+
+impl Instruction {
+    fn new(
+        name: &'static str,
+        size: u8,
+        opcode: u8,
+        duration: (u8, u8),
+        effect: Box<dyn FnMut(&mut CPU, &mut Memory) -> Result<(), Box<dyn Error>>>,
+    ) -> Self {
+        Self(InstructionMetadata {
+            name,
+            opcode,
+            duration,
+            effect,
+            size,
+        })
+    }
+}
+
+const INSTRUCTION_SET: [Instruction; 256] = [
+    Instruction::new(
+        "CMC",
+        1,
+        0b0011_1111,
+        (0, 0),
+        Box::new(|cpu, mem| -> InsructionResult {
+            cpu.flags.carry = !cpu.flags.carry;
+            Ok(())
+        }),
+    ),
+    Instruction::new(
+        "STC",
+        1,
+        0b0011_0111,
+        (0, 0),
+        Box::new(|cpu, mem| -> InsructionResult {
+            cpu.flags.carry = false;
+            Ok(())
+        }),
+    ),
+];
+
 #[derive(Debug)]
-enum Opcode {
+enum InstructionSet {
     // carry bit instructions
     /// Complement carry flag
     CMC, // complement carry

@@ -1,5 +1,14 @@
+use std::{
+    error::Error,
+    fmt::Display,
+    fs::File,
+    io::{BufReader, Read},
+    os::unix::fs::MetadataExt,
+};
+
+#[derive(Default)]
 pub(crate) struct Memory {
-    mem: [u8; 0xFFFF], // 65,536 (2^16) bytes
+    mem: Box<[u8]>,
 }
 
 impl Memory {
